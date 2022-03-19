@@ -10,8 +10,9 @@ void _write_test(long int count, int r)
 	int i;
 	double cost;
 	long long start,end;
+	// THESE NEED TO BE IN EVERY THREAD
 	Variant sk, sv;
-	DB* db;
+	DB* db; // GLOBAL
 
 	char key[KSIZE + 1];
 	char val[VSIZE + 1];
@@ -24,7 +25,8 @@ void _write_test(long int count, int r)
 	db = db_open(DATAS);
 
 	start = get_ustime_sec();
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++) { // COPY i IN THREAD
+		// MULTI THREADING STARTS HERE
 		if (r)
 			_random_key(key, KSIZE);
 		else
@@ -37,6 +39,8 @@ void _write_test(long int count, int r)
 		sv.length = VSIZE;
 		sv.mem = val;
 
+		// PAUSE OTHER THREADS WHEN MERGING
+		// LOCK DATABASE WHEN ADDING
 		db_add(db, &sk, &sv);
 		if ((i % 10000) == 0) {
 			fprintf(stderr,"random write finished %d ops%30s\r", 
@@ -45,8 +49,9 @@ void _write_test(long int count, int r)
 
 			fflush(stderr);
 		}
+		// MULTI THREADING ENDS HERE
 	}
-
+	// WAIT FOR ALL THREADS TO FINISH
 	db_close(db);
 
 	end = get_ustime_sec();
@@ -66,17 +71,20 @@ void _read_test(long int count, int r)
 	int found = 0;
 	double cost;
 	long long start,end;
+
+	// THESE NEED TO BE IN EVERY THREAD
 	Variant sk;
 	Variant sv;
-	DB* db;
+	DB* db; // GLOBAL
 	char key[KSIZE + 1];
 
 	db = db_open(DATAS);
 	start = get_ustime_sec();
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++) { // COPY i IN THREAD
 		memset(key, 0, KSIZE + 1);
 
 		/* if you want to test random write, use the following */
+		// MULTITHREADING STARTS HERE
 		if (r)
 			_random_key(key, KSIZE);
 		else
@@ -100,8 +108,9 @@ void _read_test(long int count, int r)
 
 			fflush(stderr);
 		}
+		// MULTITHREADING ENDS HERE
 	}
-
+	// WAIT FOR ALL THREADS TO FINISH
 	db_close(db);
 
 	end = get_ustime_sec();
