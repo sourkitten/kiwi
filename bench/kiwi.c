@@ -28,30 +28,24 @@ struct parameters {
 };
 //--- End of Added Code!! ---//
 
-void _write_test(long int count, int r)
-{
+//--- New code start ---//
+void* _write_test_thread(void* args){
+
+	struct parameters *parameters = (struct parameters *) args; // pass parameters into new structure (only id needed here)
+	
 	int i;
-	double cost;
-	long long start,end;
-
-
-	// MULTI THREADING STARTS HERE
-	// THESE NEED TO BE IN EVERY THREAD
 	Variant sk, sv;
-	DB* db; // GLOBAL
 
-	char key[KSIZE + 1];
+	char key[KSIZE + 1]; 
 	char val[VSIZE + 1];
 	char sbuf[1024];
-
+	
 	memset(key, 0, KSIZE + 1);
 	memset(val, 0, VSIZE + 1);
 	memset(sbuf, 0, 1024);
 
-	db = db_open(DATAS);
 
-	start = get_ustime_sec();
-	for (i = 0; i < count; i++) { // COPY i IN THREAD
+	for (i = parameters->id; i < count; i += 20) { // COPY i IN THREAD
 		if (r)
 			_random_key(key, KSIZE);
 		else
@@ -64,9 +58,11 @@ void _write_test(long int count, int r)
 		sv.length = VSIZE;
 		sv.mem = val;
 
-		// PAUSE OTHER THREADS WHEN MERGING
 		// LOCK DATABASE WHEN ADDING
+		pthread_mutex_lock(&(gVariables.mutex));
 		db_add(db, &sk, &sv);
+		pthread_mutex_unlock(&(gVariables.mutex));
+		// UNLOCK DATABASE AFTER ADDING
 		if ((i % 10000) == 0) {
 			fprintf(stderr,"random write finished %d ops%30s\r", 
 					i, 
@@ -74,9 +70,46 @@ void _write_test(long int count, int r)
 
 			fflush(stderr);
 		}
-		// MULTI THREADING ENDS HERE
 	}
-	// WAIT FOR ALL THREADS TO FINISH
+	free(args); //Free the space before exiting 
+	pthread_exit(NULL);
+}
+
+void _write_test(long int count, int r)
+{
+	int i;
+	double cost;
+	long long start,end;
+
+	
+
+	gVariables.count = 0; //reset the value
+	gVariables.count = count; //insert the value from bench.c
+	gVariables.db = db_open(DATAS); //open the database
+	gVariables.r = r; //random keys flag
+
+	start = get_ustime_sec();
+	int a = THREADS;
+	if (count < THREADS) { // Less than ${THREADS} keys - No need for ${THREADS} threads
+		a = count;
+	}
+	pthread_t writers[a]; // create array of threads
+	pthread_mutex_init (&gVariables.mutex , NULL); // initiate the mutex
+
+	// spawn the threads
+	for (i = 0; i < a; i++) {
+		// allocate parameter struct dynamically - helps prevent data corruption
+		struct parameters *params = malloc(sizeof(struct parameters));
+		params->id = i; // give id number as parameter
+		pthread_create(&writers[i], NULL, _write_test_thread, params); // create the thread
+	}
+
+	// wait for all the threads
+	for (i = 0; i < a; i++) {
+		pthread_join(writers[i], NULL);
+	}
+	pthread_mutex_destroy (&gVariables.mutex); // destroy the mutex
+
 	db_close(db);
 
 	end = get_ustime_sec();
@@ -88,6 +121,8 @@ void _write_test(long int count, int r)
 		,(double)(count / cost)
 		,cost);	
 }
+//--- New code finish ---//
+
 
 //--- Added Code!! ---//
 void* _read_test_thread(void *args)
