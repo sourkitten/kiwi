@@ -45,8 +45,8 @@ void* _write_test_thread(void* args){
 	memset(sbuf, 0, 1024);
 
 
-	for (i = parameters->id; i < count; i += 20) { // COPY i IN THREAD
-		if (r)
+	for (i = parameters->id; i < gVariables.count; i += 20) { // COPY i IN THREAD
+		if (gVariables.r)
 			_random_key(key, KSIZE);
 		else
 			snprintf(key, KSIZE, "key-%d", i);
@@ -60,7 +60,7 @@ void* _write_test_thread(void* args){
 
 		// LOCK DATABASE WHEN ADDING
 		pthread_mutex_lock(&(gVariables.mutex));
-		db_add(db, &sk, &sv);
+		db_add(gVariables.db, &sk, &sv);
 		pthread_mutex_unlock(&(gVariables.mutex));
 		// UNLOCK DATABASE AFTER ADDING
 		if ((i % 10000) == 0) {
@@ -110,7 +110,7 @@ void _write_test(long int count, int r)
 	}
 	pthread_mutex_destroy (&gVariables.mutex); // destroy the mutex
 
-	db_close(db);
+	db_close(gVariables.db);
 
 	end = get_ustime_sec();
 	cost = end -start;
