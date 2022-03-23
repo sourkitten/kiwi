@@ -10,6 +10,7 @@
 #define THREADS 20
 
 //--- Added Code!! ---//
+// Store global variables in struct
 struct Global {
 	pthread_mutex_t mutex; 
 	DB* db;
@@ -18,11 +19,14 @@ struct Global {
 	int r;
 } global;
 
+// initialize global struct
 struct Global gVariables;
 
+// store thread parameters in struct
 struct parameters {
 		int id;
 };
+//--- End of Added Code!! ---//
 
 void _write_test(long int count, int r)
 {
@@ -90,16 +94,18 @@ void* _read_test_thread(void *args)
 {
 	int i;
 	int ret;
+	int localfound = 0; // Count keys found per thread
 
-	//gVariables variables;
-	struct parameters *parameters = (struct parameters *) args;
+	struct parameters *parameters = (struct parameters *) args; // pass parameters into new structure
 
-	printf("Thread %d reporting!: c:%d\n", parameters->id, gVariables.count);
+	// Returns loaded threads
+	// printf("Thread %d reporting!: c:%d\n", parameters->id, gVariables.count);
 
 	Variant sk;
 	Variant sv;
 	char key[KSIZE + 1];
 
+	// every thread reads the (i*20 + id) key. Eg: 3, 23, 43... (count-1) + 3
 	for (i = parameters->id; i < gVariables.count; i += THREADS) { // skip ${THREADS} steps
 		memset(key, 0, KSIZE + 1);
 
@@ -112,16 +118,11 @@ void* _read_test_thread(void *args)
 		sk.length = KSIZE;
 		sk.mem = key;
 		
-		//pthread_mutex_lock(&(variables.mutex)); // lock the variable
 		ret = db_get(gVariables.db, &sk, &sv);
-		//printf("%d: %d\n", i, ret);
-		//pthread_mutex_unlock(&(variables.mutex)); // unlock the variable
 
 		if (ret) {
 			//db_free_data(sv.mem);
-			pthread_mutex_lock(&(gVariables.mutex)); // lock the variable
-			gVariables.found++; // increment the value - critical!!!!
-			pthread_mutex_unlock(&(gVariables.mutex)); // unlock the variable
+			localfound++; // keep the found key count local
 		} else {
 			INFO("not found key#%s", 
 					sk.mem);
@@ -134,22 +135,26 @@ void* _read_test_thread(void *args)
 
 			fflush(stderr);
 		}
-		// MULTITHREADING ENDS HERE
 	}
+	// Add all keys found locally to global counter
+	pthread_mutex_lock(&(gVariables.mutex)); // lock the variable
+	gVariables.found += localfound; // increase the value - critical!!!!
+	pthread_mutex_unlock(&(gVariables.mutex)); // unlock the variable
+	
+	// Exit the thread
 	free(args);
 	pthread_exit(NULL);
 }
+//--- End of Added Code!! ---//
 
 //--- Added Code!! ---//
 void _read_test(long int count, int r)
 {
-	//gVariables variables;
-
 	// GLOBAL VARIABLES
+	// Initiate / Reset global variables
 	gVariables.found = 0;
 	gVariables.count = 0;
 	gVariables.count = count;
-	// printf("var.c: %d\n", gVariables.count);
 	gVariables.db = db_open(DATAS);
 	gVariables.r = r;
 
@@ -160,19 +165,26 @@ void _read_test(long int count, int r)
 
 	start = get_ustime_sec();
 	
+	/* Check if keys are less than ${THREADS} number of threads
+	 * If so, spawn "number of keys" threads instead of ${THREADS}
+	 */
 	int a = THREADS;
 	if (count < THREADS) { // Less than ${THREADS} keys - No need for ${THREADS} threads
 		a = count;
 	}
-	pthread_t readers[a]; // up to ${THREADS} threads
+	pthread_t readers[a]; // create array of threads
 	pthread_mutex_init (&gVariables.mutex , NULL); // initiate the mutex
 
-	for (i = 0; i < a; i++) { // spawn up to ${THREADS} threads
-		struct parameters *params = malloc(sizeof(struct parameters)); // helps prevent data corruption
-		params->id = i;
-		pthread_create(&readers[i], NULL, _read_test_thread, params);
+	// spawn the threads
+	for (i = 0; i < a; i++) {
+		// allocate parameter struct dynamically - helps prevent data corruption
+		struct parameters *params = malloc(sizeof(struct parameters));
+		params->id = i; // give id number as parameter
+		pthread_create(&readers[i], NULL, _read_test_thread, params); // create the thread
 	}
-	for (i = 0; i < a; i++) { // wait for up to ${THREADS} threads
+
+	// wait for all the threads
+	for (i = 0; i < a; i++) {
 		pthread_join(readers[i], NULL);
 	}
 	pthread_mutex_destroy (&gVariables.mutex); // destroy the mutex
