@@ -1,4 +1,6 @@
+#include <string.h>
 #include "bench.h"
+<<<<<<< HEAD
 #include "../engine/db.h" //for the database
 #include "../engine/variant.h" //for the database
 #include <pthread.h> //to create threads
@@ -13,7 +15,21 @@ struct thdata { //struct to push argumnets into the threads
 	int r_th; //r value for the thread arguments
 	DB* db; //common database for the thread arguments
 };
+=======
+#include "../engine/db.h"
+#include "../engine/variant.h"
+#include <pthread.h>
+#define THREADS 5
+#define DATAS ("testdb")
+>>>>>>> d8d8bb0 (read test improvement)
 
+struct thread_inputs {
+	long int thcount; // the value count
+	int thid; // the id of each thread
+	int thr; //the value r
+	DB* thdb; //the common database for all threads to read
+	
+};
 void _random_key(char *key,int length) {
 	int i;
 	char salt[36]= "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -98,14 +114,42 @@ int main(int argc,char** argv)
 
 		count = atoi(argv[2]);
 
+<<<<<<< HEAD
 		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
 		pthread_t writer; // initiate writer thread
 
 		_print_header(count);
 		_print_environment();
+=======
+		count = atoi(argv[2]);
+		// start of new code
+		DB* db;
+		db = db_open(DATAS);
+>>>>>>> d8d8bb0 (read test improvement)
 		if (argc == 4)
 			r = 1;
+		int re = THREADS; //number of readers
+		pthread_t readers[THREADS]; 
+		if ( count < THREADS ){
+			re = count; //if reads are lesser than THREADS, create up to that number instead of threads
+		}
+		for(int i = 0; i < re; i++){
+			struct thread_inputs *args = malloc(sizeof(struct thread_inputs)); //dynamic allocation for synchronization
+			args->thcount = count; //input values
+			args->thid = i; //input values
+			args-> thr = r; //input values
+			args->thdb = db; //input database
+			pthread_create(&readers[i], NULL, &_read_test, args); //create the threads to do the routine
+		}
+		for(int i = 0; i < re; i++){
+			pthread_join(readers[i], NULL); //join the threads
+		}
+		db_close(db);
+		// finish of new code
+		_print_header(count);
+		_print_environment();
 		
+<<<<<<< HEAD
 		writer_args->count_th = count; //input count to arguments
 		writer_args->r_th = r; //input r(random) to arguments
 		writer_args->db = db; //input database to arguments
@@ -164,6 +208,10 @@ int main(int argc,char** argv)
 		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_join(reader, NULL); //wait for thread to join to continue
 
+=======
+		
+		//_read_test(count, r);
+>>>>>>> d8d8bb0 (read test improvement)
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
 		db_close(db);

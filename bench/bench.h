@@ -14,5 +14,9 @@
 
 long long get_ustime_sec(void);
 void _random_key(char *key,int length);
+<<<<<<< HEAD
 void* _write_test(void *_args); //needed for the p_thread_create function
 void* _read_test(void *_args); //needed for the p_thread_create function
+=======
+void _read_test(void *argsin);
+>>>>>>> d8d8bb0 (read test improvement)

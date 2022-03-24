@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <string.h>
 #include "../engine/db.h"
 #include "../engine/variant.h"
@@ -226,3 +227,131 @@ void* _read_test(void *_args)
 	sleep(1); // Fixes segmentation fault, if readers go first
 	pthread_exit(NULL);
 }
+=======
+#include <string.h>
+#include "../engine/db.h"
+#include "../engine/variant.h"
+#include "bench.h"
+#include <pthread.h>
+
+#define DATAS ("testdb")
+#define THREADS 5
+
+struct thread_inputs {
+	long int thcount; // the value count
+	int thid; // the id of each thread
+	int thr; //the value r
+	DB* thdb; //the common database for all threads to read
+};
+
+void _write_test(long int count, int r)
+{
+	int i;
+	double cost;
+	long long start,end;
+	Variant sk, sv;
+	DB* db;
+
+	char key[KSIZE + 1];
+	char val[VSIZE + 1];
+	char sbuf[1024];
+
+	memset(key, 0, KSIZE + 1);
+	memset(val, 0, VSIZE + 1);
+	memset(sbuf, 0, 1024);
+
+	db = db_open(DATAS);
+
+	start = get_ustime_sec();
+	for (i = 0; i < count; i++) {
+		if (r)
+			_random_key(key, KSIZE);
+		else
+			snprintf(key, KSIZE, "key-%d", i);
+		fprintf(stderr, "%d adding %s\n", i, key);
+		snprintf(val, VSIZE, "val-%d", i);
+
+		sk.length = KSIZE;
+		sk.mem = key;
+		sv.length = VSIZE;
+		sv.mem = val;
+
+		db_add(db, &sk, &sv);
+		if ((i % 10000) == 0) {
+			fprintf(stderr,"random write finished %d ops%30s\r", 
+					i, 
+					"");
+
+			fflush(stderr);
+		}
+	}
+
+	db_close(db);
+
+	end = get_ustime_sec();
+	cost = end -start;
+
+	printf(LINE);
+	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
+		,count, (double)(cost / count)
+		,(double)(count / cost)
+		,cost);	
+}
+
+void _read_test(void *argsin)
+{
+	int i;
+	int ret;
+	int found = 0;
+	double cost;
+	long long start,end;
+	//
+	struct thread_inputs *args = (struct thread_inputs *) argsin;
+	//
+	Variant sk;
+	Variant sv;
+	DB* db;
+	char key[KSIZE + 1];
+
+	db = args->thdb;
+	start = get_ustime_sec();
+	for (i = args->thid; i < args->thcount; i+=THREADS) {
+		memset(key, 0, KSIZE + 1);
+
+		/* if you want to test random write, use the following */
+		if (args->thr)
+			_random_key(key, KSIZE);
+		else
+			snprintf(key, KSIZE, "key-%d", i);
+		fprintf(stderr, "%d searching %s\n", i, key);
+		sk.length = KSIZE;
+		sk.mem = key;
+		ret = db_get(db, &sk, &sv);
+		if (ret) {
+			//db_free_data(sv.mem);
+			found++;
+		} else {
+			INFO("not found key#%s", 
+					sk.mem);
+    	}
+
+		if ((i % 10000) == 0) {
+			fprintf(stderr,"random read finished %d ops%30s\r", 
+					i, 
+					"");
+
+			fflush(stderr);
+		}
+	}
+	end = get_ustime_sec();
+	cost = end - start;
+	sleep(1);
+	printf(LINE);
+	printf("|Random-Read-thread	(done:%ld, found:%d): %.6f sec/op; %.1f reads /sec(estimated); cost:%.3f(sec)\n",
+		args->thcount/THREADS, found,
+		(double)(cost / (args->thcount/THREADS)),
+		(double)((args->thcount/THREADS) / cost),
+		cost);
+	free(args);
+}
+>>>>>>> d8d8bb0 (read test improvement)
