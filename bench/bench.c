@@ -1,4 +1,19 @@
 #include "bench.h"
+<<<<<<< Updated upstream
+=======
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define DATAS ("testdb")
+
+
+struct thdata {
+	long int count_th;
+	int r_th;
+	DB* db;
+};
+>>>>>>> Stashed changes
 
 void _random_key(char *key,int length) {
 	int i;
@@ -96,7 +111,49 @@ int main(int argc,char** argv)
 		if (argc == 4)
 			r = 1;
 		
+<<<<<<< Updated upstream
 		_read_test(count, r);
+=======
+		reader_args->count_th = count; //input count to arguments
+		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->db = db; //input database to arguments
+		
+		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
+		pthread_join(reader, NULL); //wait for thread to join to continue
+	} else if (strcmp(argv[1], "write|read" == 0)) {
+		int r = 0;
+		int perc1; //percentage for writers
+		int perc2; //percentage for readers
+
+		struct thdata *reader_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for reader thread
+		pthread_t reader; // initiate reader thread
+
+		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
+		pthread_t writer; // initiate writer thread
+
+		count = atoi(argv[2]);
+		_print_header(count);
+		_print_environment();
+
+		perc1 = atoi(argv[4]); //percentage for writer (assuming it's 100 > perc1 > 0)
+		perc2 = atoi(argv[5]); //percentage for readers (assuming it's 100 > perc2 > 0)
+		if (argc == 6)
+			r = 1;
+		
+		reader_args->count_th = (long int) count*perc2/100; //input count to arguments
+		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->db = db; //input database to arguments
+
+		writer_args->count_th = (long int) count*perc1/100; //input count to arguments
+		writer_args->r_th = r; //input r(random) to arguments
+		writer_args->db = db; //input database to arguments
+		writer_flag ++;
+		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
+		pthread_join(writer, NULL); //wait for thread to join to continue
+		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
+		pthread_join(reader, NULL); //wait for thread to join to continue
+
+>>>>>>> Stashed changes
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
 		exit(1);
