@@ -8,7 +8,10 @@
 
 #define DATAS ("testdb")
 #define THREADS 5
+
 //--- Added Code!! ---//
+extern pthread_mutex_t WRlock;
+
 struct thdata {
 	long int count_th; //count from args to unload
 	int r_th; //r from args to unload
@@ -87,8 +90,10 @@ void _write_test(void *_args)
 		,writer->count_th, (double)(cost / writer->count_th)
 		,(double)(writer->count_th / cost)
 		,cost);	
+
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
 	pthread_mutex_unlock(&WRlock);
+	sleep(1); // Fixes segmentation fault
 	pthread_exit(NULL);
 }
 
@@ -206,6 +211,7 @@ void _read_test(void *_args)
 		(double)(gVariables.count / cost),
 		cost);
 	free(_args);  //free the arguments with the dynamic memory allocation (for synchronization purposes)
+	
 	pthread_mutex_unlock(&WRlock);
 	pthread_exit(NULL);
 }

@@ -71,3 +71,11 @@ engine/sst_loader.o
 engine/sst.o
 engine/utils.o
 engine/vector.o
+bench/testdb/si/0/261.sst
+bench/testdb/si/0/262.sst
+bench/testdb/si/0/263.sst
+bench/testdb/si/0/265.sst
+bench/testdb/si/1/259.sst
+bench/testdb/si/1/260.sst
+bench/testdb/si/2/264.sst
+bench/err.txt
