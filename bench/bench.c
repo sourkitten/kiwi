@@ -1,4 +1,6 @@
 #include "bench.h"
+#include "../engine/db.h"
+#include "../engine/variant.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,7 +131,7 @@ int main(int argc,char** argv)
 		
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(reader, NULL); //wait for thread to join to continue
-	} else if (strcmp(argv[1], "write-read" == 0)) {
+	} else if (strcmp(argv[1], "write-read") == 0) {
 		int r = 0;
 		int perc1; //percentage for writers
 		int perc2; //percentage for readers
@@ -149,11 +151,11 @@ int main(int argc,char** argv)
 		if (argc == 6)
 			r = 1;
 		
-		reader_args->count_th = (long int) count*perc2/100; //input count to arguments
+		reader_args->count_th = (long int) (count*perc2/100); //input count to arguments
 		reader_args->r_th = r; //input r(random) to arguments
 		reader_args->db = db; //input database to arguments
 
-		writer_args->count_th = (long int) count*perc1/100; //input count to arguments
+		writer_args->count_th = (long int) (count*perc1/100); //input count to arguments
 		writer_args->r_th = r; //input r(random) to arguments
 		writer_args->db = db; //input database to arguments
 	
