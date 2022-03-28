@@ -7,7 +7,7 @@
 
 #define DATAS ("testdb")
 
-
+pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER;
 struct thdata {
 	long int count_th;
 	int r_th;
@@ -160,8 +160,8 @@ int main(int argc,char** argv)
 		writer_args->db = db; //input database to arguments
 	
 		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
-		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
+		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_join(reader, NULL); //wait for thread to join to continue
 
 	} else {
