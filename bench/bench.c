@@ -7,7 +7,7 @@
 
 #define DATAS ("testdb")
 
-
+pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER;
 struct thdata {
 	long int count_th;
 	int r_th;

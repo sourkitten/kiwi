@@ -35,6 +35,7 @@ struct parameters {
 
 void _write_test(void *_args)
 {
+	pthread_mutex_lock(&WRlock);
 	int i;
 	double cost;
 	long long start,end;
@@ -87,6 +88,7 @@ void _write_test(void *_args)
 		,(double)(writer->count_th / cost)
 		,cost);	
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
+	pthread_mutex_unlock(&WRlock);
 	pthread_exit(NULL);
 }
 
@@ -151,6 +153,7 @@ void* _read_test_thread(void *args)
 //--- Added Code!! ---//
 void _read_test(void *_args)
 {
+	pthread_mutex_lock(&WRlock);
 	struct thdata *reader = (struct thdata*) _args; //unload the arguments from pthread_create
 	// GLOBAL VARIABLES
 	// Initiate / Reset global variables
@@ -203,5 +206,6 @@ void _read_test(void *_args)
 		(double)(gVariables.count / cost),
 		cost);
 	free(_args);  //free the arguments with the dynamic memory allocation (for synchronization purposes)
+	pthread_mutex_unlock(&WRlock);
 	pthread_exit(NULL);
 }
