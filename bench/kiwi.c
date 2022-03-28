@@ -213,5 +213,6 @@ void _read_test(void *_args)
 	free(_args);  //free the arguments with the dynamic memory allocation (for synchronization purposes)
 	
 	pthread_mutex_unlock(&WRlock);
+	sleep(1); // Fixes segmentation fault, if readers go first
 	pthread_exit(NULL);
 }
