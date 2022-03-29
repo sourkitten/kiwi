@@ -36,7 +36,7 @@ struct parameters {
 };
 //--- End of Added Code!! ---//
 
-void _write_test(void *_args)
+void* _write_test(void *_args)
 {
 	pthread_mutex_lock(&WRlock);
 	int i;
@@ -156,7 +156,7 @@ void* _read_test_thread(void *args)
 //--- End of Added Code!! ---//
 
 //--- Added Code!! ---//
-void _read_test(void *_args)
+void* _read_test(void *_args)
 {
 	pthread_mutex_lock(&WRlock);
 	struct thdata *reader = (struct thdata*) _args; //unload the arguments from pthread_create
@@ -176,7 +176,6 @@ void _read_test(void *_args)
 	
 
 	start = get_ustime_sec();
-	
 	/* Check if keys are less than ${THREADS} number of threads
 	 * If so, spawn "number of keys" threads instead of ${THREADS}
 	 */

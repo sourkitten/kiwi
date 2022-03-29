@@ -89,7 +89,7 @@ int main(int argc,char** argv)
 
 	srand(time(NULL));
 	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n");
 		exit(1);
 	}
 	db = db_open(DATAS);
@@ -165,7 +165,7 @@ int main(int argc,char** argv)
 		pthread_join(reader, NULL); //wait for thread to join to continue
 
 	} else {
-		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n");
 		db_close(db);
 		exit(1);
 	}
