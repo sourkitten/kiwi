@@ -1,17 +1,17 @@
 #include "bench.h"
-#include "../engine/db.h"
-#include "../engine/variant.h"
-#include <pthread.h>
-#include <stdio.h>
+#include "../engine/db.h" //for the database
+#include "../engine/variant.h" //for the database
+#include <pthread.h> //to create threads
+#include <stdio.h> 
 #include <stdlib.h>
 
-#define DATAS ("testdb")
+#define DATAS ("testdb") //for the database
 
-pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER;
-struct thdata {
-	long int count_th;
-	int r_th;
-	DB* db;
+pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER; //initialization for the lock of write-readers
+struct thdata { //struct to push argumnets into the threads
+	long int count_th; //count value for the thread arguments
+	int r_th; //r value for the thread arguments
+	DB* db; //common database for the thread arguments
 };
 
 void _random_key(char *key,int length) {
@@ -85,14 +85,14 @@ void _print_environment()
 int main(int argc,char** argv)
 {
 	long int count;
-	DB* db;
+	DB* db; //added the database in bench.c to push it into the main write and read thread
 
 	srand(time(NULL));
 	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <write | read> <count>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //change the description for the write-read function
 		exit(1);
 	}
-	db = db_open(DATAS);
+	db = db_open(DATAS); //open the database
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
@@ -165,10 +165,10 @@ int main(int argc,char** argv)
 		pthread_join(reader, NULL); //wait for thread to join to continue
 
 	} else {
-		fprintf(stderr,"Usage: db-bench <write | read> <count> <random>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
 		db_close(db);
 		exit(1);
 	}
-	db_close(db);
+	db_close(db); //close database
 	return 1;
 }
