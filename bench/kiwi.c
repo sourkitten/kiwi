@@ -1,7 +1,7 @@
 #include <string.h>
 #include "../engine/db.h"
 #include "../engine/variant.h"
-#include "bench.h" //include the bench
+#include "bench.h" 
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,8 +87,8 @@ void* _write_test(void *_args)
 	
 	printf(LINE);
 	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-		,writer->count_th, (double)(cost / writer->count_th)
-		,(double)(writer->count_th / cost)
+		,writer->count_th, (double)(cost / writer->count_th) //count -> count_th
+		,(double)(writer->count_th / cost) //count -> count_th
 		,cost);	
 
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
