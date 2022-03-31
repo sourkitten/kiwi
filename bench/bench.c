@@ -92,7 +92,7 @@ int main(int argc,char** argv)
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //change the description for the write-read function
 		exit(1);
 	}
-	db = db_open(DATAS);
+	db = db_open(DATAS); //open the database
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
@@ -169,6 +169,6 @@ int main(int argc,char** argv)
 		db_close(db);
 		exit(1);
 	}
-	db_close(db);
+	db_close(db); //close database
 	return 1;
 }

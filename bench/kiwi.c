@@ -1,16 +1,16 @@
 #include <string.h>
 #include "../engine/db.h"
 #include "../engine/variant.h"
-#include "bench.h"
+#include "bench.h" //include the bench
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DATAS ("testdb")
-#define THREADS 5
+#define DATAS ("testdb") 
+#define THREADS 5 //number of threads created in the multi-read
 
 //--- Added Code!! ---//
-extern pthread_mutex_t WRlock;
+extern pthread_mutex_t WRlock; //locks for either write or read
 
 struct thdata {
 	long int count_th; //count from args to unload
@@ -38,7 +38,7 @@ struct parameters {
 
 void* _write_test(void *_args)
 {
-	pthread_mutex_lock(&WRlock);
+	pthread_mutex_lock(&WRlock); //lock for either write or read
 	int i;
 	double cost;
 	long long start,end;
@@ -92,7 +92,7 @@ void* _write_test(void *_args)
 		,cost);	
 
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
-	pthread_mutex_unlock(&WRlock);
+	pthread_mutex_unlock(&WRlock); //lock for either write or read
 	sleep(1); // Fixes segmentation fault
 	pthread_exit(NULL);
 }
