@@ -10,21 +10,21 @@
 #define THREADS 5 //number of threads created in the multi-read
 
 //--- Added Code!! ---//
-extern pthread_mutex_t WRlock; //locks for either write or read
+extern pthread_mutex_t WRlock; // lock that allows either read or write
 
 struct thdata {
 	long int count_th; //count from args to unload
 	int r_th; //r from args to unload
 	DB* db; //database from args to unload
 };
-//--- Added Code!! ---//
+
 // Store global variables in struct
 struct Global {
-	pthread_mutex_t mutex; 
-	DB* db;
-	int found;
-	long int count;
-	int r;
+	pthread_mutex_t mutex; // mutex for locking the found counter
+	DB* db; 			   // common database
+	int found;			   // global found counter
+	long int count;		   // count number
+	int r;				   // random flag
 } global;
 
 // initialize global struct
@@ -42,7 +42,8 @@ void* _write_test(void *_args)
 	int i;
 	double cost;
 	long long start,end;
-	struct thdata *writer = (struct thdata*) _args; //unload the arguments from pthread_create
+	//unload the arguments from pthread_create
+	struct thdata *writer = (struct thdata*) _args;
 
 
 	Variant sk, sv;
@@ -91,8 +92,16 @@ void* _write_test(void *_args)
 		,(double)(writer->count_th / cost) //count -> count_th
 		,cost);	
 
+	/*if (writer->r_th) { // closing and reopning causes core dump
+		db_close(db);
+		db = db_open(DATAS);
+	}*/
+
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
-	pthread_mutex_unlock(&WRlock); //lock for either write or read
+
+	
+	sleep(3);
+	pthread_mutex_unlock(&WRlock);
 	sleep(1); // Fixes segmentation fault
 	pthread_exit(NULL);
 }
@@ -113,7 +122,7 @@ void* _read_test_thread(void *args)
 	Variant sv;
 	char key[KSIZE + 1];
 
-	// every thread reads the (i*20 + id) key. Eg: 3, 23, 43... (count-1) + 3
+	// every thread reads the (m*THREADS + id) key. Eg: 3, 13, 23... (for THREADS = 10)
 	for (i = parameters->id; i < gVariables.count; i += THREADS) { // skip ${THREADS} steps
 		memset(key, 0, KSIZE + 1);
 		
@@ -158,29 +167,31 @@ void* _read_test_thread(void *args)
 //--- Added Code!! ---//
 void* _read_test(void *_args)
 {
-	pthread_mutex_lock(&WRlock);
-	struct thdata *reader = (struct thdata*) _args; //unload the arguments from pthread_create
+	// lock that allows either read or write
+	pthread_mutex_lock(&WRlock); 
+	// unload the arguments from pthread_create
+	struct thdata *reader = (struct thdata*) _args; 
+	
 	// GLOBAL VARIABLES
 	// Initiate / Reset global variables
-	gVariables.found = 0;
-	gVariables.count = 0; //put on 0 (didn't work otherwise, because threads would just stop)
+	gVariables.found = 0;	// initialize global found counter to 0
+	gVariables.count = 0;	// put on 0 (didn't work otherwise,
+							// because threads would just stop)
 	gVariables.count = reader->count_th; //input count from arguments
-	gVariables.db = reader->db; //input db from arguments
-	gVariables.r = reader->r_th; //input r from arguments
+	gVariables.db = reader->db; 		 //input db from arguments
+	gVariables.r = reader->r_th;		 //input r from arguments
 
 	// LOCAL VARIABLES
 	int i;
 	double cost;
 	long long start, end;
 
-	
-
 	start = get_ustime_sec();
 	/* Check if keys are less than ${THREADS} number of threads
 	 * If so, spawn "number of keys" threads instead of ${THREADS}
 	 */
 	int a = THREADS;
-	if (gVariables.count < THREADS) { // Less than ${THREADS} keys - No need for ${THREADS} threads
+	if (gVariables.count < THREADS) { // Less than ${THREADS} keys
 		a = gVariables.count;
 	}
 	pthread_t readers[a]; // create array of threads

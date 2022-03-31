@@ -4,7 +4,7 @@
 # returns only statistics results and syntax errors
 
 echo "If this script doesn't work, please use the ./kiwi-bench binary directly,"
-echo "just add this after your arguments:  2> >(grep Usage) | grep -e \"done\" -e \"Usage:\""
+echo "just add this after your arguments:  2> err.txt | grep -e \"done\""
 echo
 
 # Redirect stderr to stdout, greping the word Usage, in case of syntax error
