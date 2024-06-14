@@ -1,16 +1,35 @@
+#include <string.h>
 #include "bench.h"
+<<<<<<< HEAD
+#include "../engine/db.h" //for the database
+#include "../engine/variant.h" //for the database
+#include <pthread.h> //to create threads
+#include <stdio.h> 
+#include <stdlib.h>
 
-long long get_ustime_sec(void)
-{
-	struct timeval tv;
-	long long ust;
+#define DATAS ("testdb") //for the database
 
-	gettimeofday(&tv, NULL);
-	ust = ((long long)tv.tv_sec)*1000000;
-	ust += tv.tv_usec;
-	return ust / 1000000;
-}
+pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER; //initialization for the lock of write-readers
+struct thdata { //struct to push argumnets into the threads
+	long int count_th; //count value for the thread arguments
+	int r_th; //r value for the thread arguments
+	DB* db; //common database for the thread arguments
+};
+=======
+#include "../engine/db.h"
+#include "../engine/variant.h"
+#include <pthread.h>
+#define THREADS 5
+#define DATAS ("testdb")
+>>>>>>> d8d8bb0 (read test improvement)
 
+struct thread_inputs {
+	long int thcount; // the value count
+	int thid; // the id of each thread
+	int thr; //the value r
+	DB* thdb; //the common database for all threads to read
+	
+};
 void _random_key(char *key,int length) {
 	int i;
 	char salt[36]= "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -82,32 +101,122 @@ void _print_environment()
 int main(int argc,char** argv)
 {
 	long int count;
+	DB* db; //added the database in bench.c to push it into the main write and read thread
 
 	srand(time(NULL));
 	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <op: write | read> <count>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //change the description for the write-read function
 		exit(1);
 	}
-	
+	db = db_open(DATAS); //open the database
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
 
 		count = atoi(argv[2]);
+
+<<<<<<< HEAD
+		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
+		pthread_t writer; // initiate writer thread
+
+		_print_header(count);
+		_print_environment();
+=======
+		count = atoi(argv[2]);
+		// start of new code
+		DB* db;
+		db = db_open(DATAS);
+>>>>>>> d8d8bb0 (read test improvement)
+		if (argc == 4)
+			r = 1;
+		int re = THREADS; //number of readers
+		pthread_t readers[THREADS]; 
+		if ( count < THREADS ){
+			re = count; //if reads are lesser than THREADS, create up to that number instead of threads
+		}
+		for(int i = 0; i < re; i++){
+			struct thread_inputs *args = malloc(sizeof(struct thread_inputs)); //dynamic allocation for synchronization
+			args->thcount = count; //input values
+			args->thid = i; //input values
+			args-> thr = r; //input values
+			args->thdb = db; //input database
+			pthread_create(&readers[i], NULL, &_read_test, args); //create the threads to do the routine
+		}
+		for(int i = 0; i < re; i++){
+			pthread_join(readers[i], NULL); //join the threads
+		}
+		db_close(db);
+		// finish of new code
+		_print_header(count);
+		_print_environment();
+		
+<<<<<<< HEAD
+		writer_args->count_th = count; //input count to arguments
+		writer_args->r_th = r; //input r(random) to arguments
+		writer_args->db = db; //input database to arguments
+		
+		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
+		pthread_join(writer, NULL); //wait for thread to join to continue
+	} else if (strcmp(argv[1], "read") == 0) {
+		int r = 0;
+
+		count = atoi(argv[2]);
+
+		struct thdata *reader_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for reader thread
+		pthread_t reader; // initiate reader thread
+
 		_print_header(count);
 		_print_environment();
 		if (argc == 4)
 			r = 1;
-		_write_test(count, r);
-	} else if (strcmp(argv[1], "read") == 0) {
+		
+		reader_args->count_th = count; //input count to arguments
+		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->db = db; //input database to arguments
+		
+		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
+		pthread_join(reader, NULL); //wait for thread to join to continue
+	} else if (strcmp(argv[1], "write-read") == 0) {
+		int r = 0;
+		int perc1; //percentage for writers
+		int perc2; //percentage for readers
+
+		struct thdata *reader_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for reader thread
+		pthread_t reader; // initiate reader thread
+
+		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
+		pthread_t writer; // initiate writer thread
+
 		count = atoi(argv[2]);
 		_print_header(count);
 		_print_environment();
+
+		perc1 = atoi(argv[3]); //percentage for writer (assuming it's 100 > perc1 > 0)
+		perc2 = atoi(argv[4]); //percentage for readers (assuming it's 100 > perc2 > 0)
+		if (argc == 6)
+			r = 1;
 		
-		_read_test(count);
+		reader_args->count_th = (long int) (count*perc2/100); //input count to arguments
+		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->db = db; //input database to arguments
+
+		writer_args->count_th = (long int) (count*perc1/100); //input count to arguments
+		writer_args->r_th = r; //input r(random) to arguments
+		writer_args->db = db; //input database to arguments
+	
+		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
+		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
+		pthread_join(writer, NULL); //wait for thread to join to continue
+		pthread_join(reader, NULL); //wait for thread to join to continue
+
+=======
+		
+		//_read_test(count, r);
+>>>>>>> d8d8bb0 (read test improvement)
 	} else {
-		fprintf(stderr,"Usage: db-bench <op: write | read> <count> <random>\n");
+		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
+		db_close(db);
 		exit(1);
 	}
-
+	db_close(db); //close database
 	return 1;
 }

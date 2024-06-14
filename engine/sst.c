@@ -391,8 +391,6 @@ SST* sst_new(const char* basedir, uint64_t cache_size)
         self->num_files[i] = 0;
     }
 
-    _read_manifest(self);
-
 #ifdef BACKGROUND_MERGE
     self->merge_state = 0;
     self->immutable = NULL;
@@ -405,6 +403,8 @@ SST* sst_new(const char* basedir, uint64_t cache_size)
 
     pthread_create(&self->merge_thread, NULL, (void *(*)(void *))merge_thread, self);
 #endif
+
+    _read_manifest(self);
 
     return self;
 }

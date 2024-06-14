@@ -1,15 +1,15 @@
 CC = gcc
 AR = ar
-STD = -std=c99 -Wall -pedantic -DHASH_FUNCTION=HASH_FNV
+STD = -std=c99 -pedantic -DHASH_FUNCTION=HASH_FNV
+DISWARN = -Wno-stringop-overflow -Wno-cpp -Wno-format-truncation -Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-unused-variable
+STD = -std=c99 -DHASH_FUNCTION=HASH_FNV 
 OPTIMIZATION ?= -O3 -fomit-frame-pointer -funroll-loops
 OPT = $(OPTIMIZATION)
 DEBUG = -g -ggdb
-DEBUG = -DNDEBUG
 WARN = -Wall
 
-FINAL_CFLAGS = $(STD) $(WARN) $(OPT) $(DEBUG) $(CFLAGS)
+FINAL_CFLAGS = $(STD) $(WARN) $(OPT) $(DEBUG) $(CFLAGS) $(DISWARN)
 FINAL_LDFLAGS = $(LDFLAGS) $(DEBUG)
-# FINAL_LIBS = -lpthread -lsnappy -Wl,-soname,libsnappy.so -Wl,--no-undefined
 FINAL_LIBS = -lpthread -lsnappy -L/usr/local/lib
 
 FINAL_CC = $(QUIET_CC)$(CC) $(FINAL_CFLAGS)

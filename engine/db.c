@@ -47,7 +47,7 @@ void db_close(DB *self)
 int db_add(DB* self, Variant* key, Variant* value)
 {
     if (memtable_needs_compaction(self->memtable))
-    {
+    { // PAUSE OTHER THREADS WHEN MERGING
         INFO("Starting compaction of the memtable after %d insertions and %d deletions",
              self->memtable->add_count, self->memtable->del_count);
         sst_merge(self->sst, self->memtable);
