@@ -1,12 +1,12 @@
 #include <string.h>
 #include "bench.h"
-<<<<<<< HEAD
 #include "../engine/db.h" //for the database
 #include "../engine/variant.h" //for the database
 #include <pthread.h> //to create threads
 #include <stdio.h> 
 #include <stdlib.h>
 
+#define THREADS 5
 #define DATAS ("testdb") //for the database
 
 pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER; //initialization for the lock of write-readers
@@ -15,13 +15,6 @@ struct thdata { //struct to push argumnets into the threads
 	int r_th; //r value for the thread arguments
 	DB* db; //common database for the thread arguments
 };
-=======
-#include "../engine/db.h"
-#include "../engine/variant.h"
-#include <pthread.h>
-#define THREADS 5
-#define DATAS ("testdb")
->>>>>>> d8d8bb0 (read test improvement)
 
 struct thread_inputs {
 	long int thcount; // the value count
@@ -114,18 +107,15 @@ int main(int argc,char** argv)
 
 		count = atoi(argv[2]);
 
-<<<<<<< HEAD
 		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
 		pthread_t writer; // initiate writer thread
 
 		_print_header(count);
 		_print_environment();
-=======
 		count = atoi(argv[2]);
 		// start of new code
 		DB* db;
 		db = db_open(DATAS);
->>>>>>> d8d8bb0 (read test improvement)
 		if (argc == 4)
 			r = 1;
 		int re = THREADS; //number of readers
@@ -149,7 +139,6 @@ int main(int argc,char** argv)
 		_print_header(count);
 		_print_environment();
 		
-<<<<<<< HEAD
 		writer_args->count_th = count; //input count to arguments
 		writer_args->r_th = r; //input r(random) to arguments
 		writer_args->db = db; //input database to arguments
@@ -208,10 +197,8 @@ int main(int argc,char** argv)
 		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_join(reader, NULL); //wait for thread to join to continue
 
-=======
 		
 		//_read_test(count, r);
->>>>>>> d8d8bb0 (read test improvement)
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
 		db_close(db);
