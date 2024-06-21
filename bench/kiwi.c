@@ -23,7 +23,6 @@ struct Global gVariables; //global variables for reader threads
 
 void* _write_test(void *_args)
 {
-	pthread_mutex_lock(&WRlock); //lock for either write or read
 	int i;
 	double cost;
 	long long start,end;
@@ -44,7 +43,9 @@ void* _write_test(void *_args)
 
 	db = writer->db; //unload the database 
 
-	// TODO move thread lock here? Info above is thread private. … 
+	// Lock for thread safety
+	pthread_mutex_lock(&WRlock); //lock for either write or read
+	
 	start = get_ustime_sec();
 	for (i = writer->id; i < writer->count; i += THREADS) { // change count to writer->count (from args)
 		if (writer->random) // change r to writer->r (from args)
