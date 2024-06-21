@@ -48,3 +48,4 @@ engine/utils.o
 engine/vector.o
 bench/err.txt
 bench/kiwi-bench
+testdb/
