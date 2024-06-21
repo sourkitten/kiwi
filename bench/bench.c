@@ -1,28 +1,11 @@
 #include <string.h>
 #include "bench.h"
-#include "../engine/db.h" //for the database
-#include "../engine/variant.h" //for the database
 #include <pthread.h> //to create threads
 #include <stdio.h> 
 #include <stdlib.h>
 
-#define THREADS 5
-#define DATAS ("testdb") //for the database
-
-pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER; //initialization for the lock of write-readers
-struct thdata { //struct to push argumnets into the threads
-	long int count_th; //count value for the thread arguments
-	int r_th; //r value for the thread arguments
-	DB* db; //common database for the thread arguments
-};
-
-struct thread_inputs {
-	long int thcount; // the value count
-	int thid; // the id of each thread
-	int thr; //the value r
-	DB* thdb; //the common database for all threads to read
-	
-};
+// Initialization for the lock of write-readers. Used inside kiwi.c
+pthread_mutex_t WRlock = PTHREAD_MUTEX_INITIALIZER;
 
 void _random_key(char *key,int length) {
 	int i;
@@ -108,12 +91,8 @@ int main(int argc,char** argv)
 
 		count = atoi(argv[2]);
 
-		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
-		pthread_t writer; // initiate writer thread
-
 		_print_header(count);
 		_print_environment();
-		count = atoi(argv[2]);
 		// start of new code
 		DB* db;
 		db = db_open(DATAS);
@@ -126,12 +105,11 @@ int main(int argc,char** argv)
 		}
 		for(int i = 0; i < wr; i++){
 			struct thread_inputs *args = malloc(sizeof(struct thread_inputs)); //dynamic allocation for synchronization
-			args->thcount = count; //input values
-			args->thid = i; //input values
-			args->thr = r; //input values
-			args->thdb = db; //input database
+			args->id = i;
+			args->count = count;
+			args->random = r;
+			args->db = db;
 			pthread_create(&writers[i], NULL, &_write_test, args); //create the threads to do the routine
-			free(args);
 		}
 		for(int i = 0; i < wr; i++){
 			pthread_join(writers[i], NULL); //join the threads
@@ -140,20 +118,12 @@ int main(int argc,char** argv)
 		// finish of new code
 		_print_header(count);
 		_print_environment();
-		
-		writer_args->count_th = count; //input count to arguments
-		writer_args->r_th = r; //input r(random) to arguments
-		writer_args->db = db; //input database to arguments
-		
-		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
-		pthread_join(writer, NULL); //wait for thread to join to continue
-		free(writer_args);
 	} else if (strcmp(argv[1], "read") == 0) {
 		int r = 0;
 
 		count = atoi(argv[2]);
 
-		struct thdata *reader_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for reader thread
+		struct thread_inputs *reader_args = malloc(sizeof(struct thread_inputs)); //initiate the struct as arguments for reader thread
 		pthread_t reader; // initiate reader thread
 
 		_print_header(count);
@@ -161,22 +131,21 @@ int main(int argc,char** argv)
 		if (argc == 4)
 			r = 1;
 		
-		reader_args->count_th = count; //input count to arguments
-		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->count = count; //input count to arguments
+		reader_args->random = r; //input r(random) to arguments
 		reader_args->db = db; //input database to arguments
 		
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(reader, NULL); //wait for thread to join to continue
-		free(reader_args);
 	} else if (strcmp(argv[1], "write-read") == 0) {
 		int r = 0;
 		int perc1; //percentage for writers
 		int perc2; //percentage for readers
 
-		struct thdata *reader_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for reader thread
+		struct thread_inputs *reader_args = malloc(sizeof(struct thread_inputs)); //initiate the struct as arguments for reader thread
 		pthread_t reader; // initiate reader thread
 
-		struct thdata *writer_args = malloc(sizeof(struct thdata)); //initiate the struct as arguments for writer thread
+		struct thread_inputs *writer_args = malloc(sizeof(struct thread_inputs)); //initiate the struct as arguments for writer thread
 		pthread_t writer; // initiate writer thread
 
 		count = atoi(argv[2]);
@@ -188,20 +157,18 @@ int main(int argc,char** argv)
 		if (argc == 6)
 			r = 1;
 		
-		reader_args->count_th = (long int) (count*perc2/100); //input count to arguments
-		reader_args->r_th = r; //input r(random) to arguments
+		reader_args->count = (long int) (count*perc2/100); //input count to arguments
+		reader_args->random = r; //input r(random) to arguments
 		reader_args->db = db; //input database to arguments
 
-		writer_args->count_th = (long int) (count*perc1/100); //input count to arguments
-		writer_args->r_th = r; //input r(random) to arguments
+		writer_args->count = (long int) (count*perc1/100); //input count to arguments
+		writer_args->random = r; //input r(random) to arguments
 		writer_args->db = db; //input database to arguments
 	
 		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_join(reader, NULL); //wait for thread to join to continue
-		free(reader_args);
-		free(writer_args);
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
 		db_close(db);

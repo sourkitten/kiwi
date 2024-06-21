@@ -1,22 +1,11 @@
 #include <string.h>
-#include "../engine/db.h"
-#include "../engine/variant.h"
 #include "bench.h" 
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DATAS ("testdb") 
-#define THREADS 5 //number of threads created in the multi-read
-
 //--- Added Code!! ---//
 extern pthread_mutex_t WRlock; // lock that allows either read or write
-
-struct thdata {
-	long int count_th; //count from args to unload
-	int r_th; //r from args to unload
-	DB* db; //database from args to unload
-};
 
 // Store global variables in struct
 struct Global {
@@ -30,10 +19,6 @@ struct Global {
 // initialize global struct
 struct Global gVariables; //global variables for reader threads
 
-// store thread parameters in struct
-struct parameters {
-		int id;
-};
 //--- End of Added Code!! ---//
 
 void* _write_test(void *_args)
@@ -43,7 +28,7 @@ void* _write_test(void *_args)
 	double cost;
 	long long start,end;
 	//unload the arguments from pthread_create
-	struct thdata *writer = (struct thdata*) _args;
+	struct thread_inputs *writer = (struct thread_inputs*) _args;
 
 
 	Variant sk, sv;
@@ -59,9 +44,10 @@ void* _write_test(void *_args)
 
 	db = writer->db; //unload the database 
 
+	// TODO move thread lock here? Info above is thread private. … 
 	start = get_ustime_sec();
-	for (i = 0; i < writer->count_th; i++) { // change count to writer->count (from args)
-		if (writer->r_th) // change r to writer->r (from args)
+	for (i = writer->id; i < writer->count; i += THREADS) { // change count to writer->count (from args)
+		if (writer->random) // change r to writer->r (from args)
 			_random_key(key, KSIZE);
 		else
 			snprintf(key, KSIZE, "key-%d", i);
@@ -88,14 +74,9 @@ void* _write_test(void *_args)
 	
 	printf(LINE);
 	printf("|Random-Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n"
-		,writer->count_th, (double)(cost / writer->count_th) //count -> count_th
-		,(double)(writer->count_th / cost) //count -> count_th
+		,writer->count, (double)(cost / writer->count) //count -> count_th
+		,(double)(writer->count / cost) //count -> count_th
 		,cost);	
-
-	/*if (writer->r_th) { // closing and reopning causes core dump
-		db_close(db);
-		db = db_open(DATAS);
-	}*/
 
 	free(_args); //free the arguments with the dynamic memory allocation (for synchronization purposes)
 
@@ -113,7 +94,7 @@ void* _read_test_thread(void *args)
 	int ret;
 	int localfound = 0; // Count keys found per thread
 
-	struct parameters *parameters = (struct parameters *) args; // pass parameters into new structure
+	struct thread_inputs *reader = (struct thread_inputs *) args; // pass parameters into new structure
 
 	// Returns loaded threads
 	// printf("Thread %d reporting!: c:%d\n", parameters->id, gVariables.count);
@@ -123,7 +104,7 @@ void* _read_test_thread(void *args)
 	char key[KSIZE + 1];
 
 	// every thread reads the (m*THREADS + id) key. Eg: 3, 13, 23... (for THREADS = 10)
-	for (i = parameters->id; i < gVariables.count; i += THREADS) { // skip ${THREADS} steps
+	for (i = reader->id; i < gVariables.count; i += THREADS) { // skip ${THREADS} steps
 		memset(key, 0, KSIZE + 1);
 		
 		/* if you want to test random write, use the following */
@@ -170,16 +151,16 @@ void* _read_test(void *_args)
 	// lock that allows either read or write
 	pthread_mutex_lock(&WRlock); 
 	// unload the arguments from pthread_create
-	struct thdata *reader = (struct thdata*) _args; 
+	struct thread_inputs *reader = (struct thread_inputs*) _args; 
 	
 	// GLOBAL VARIABLES
 	// Initiate / Reset global variables
 	gVariables.found = 0;	// initialize global found counter to 0
 	gVariables.count = 0;	// put on 0 (didn't work otherwise,
 							// because threads would just stop)
-	gVariables.count = reader->count_th; //input count from arguments
+	gVariables.count = reader->count; //input count from arguments
 	gVariables.db = reader->db; 		 //input db from arguments
-	gVariables.r = reader->r_th;		 //input r from arguments
+	gVariables.r = reader->random;		 //input r from arguments
 
 	// LOCAL VARIABLES
 	int i;
@@ -200,9 +181,9 @@ void* _read_test(void *_args)
 	// spawn the threads
 	for (i = 0; i < a; i++) {
 		// allocate parameter struct dynamically - helps prevent data corruption
-		struct parameters *params = malloc(sizeof(struct parameters));
-		params->id = i; // give id number as parameter
-		pthread_create(&readers[i], NULL, _read_test_thread, params); // create the thread
+		struct thread_inputs *reader = malloc(sizeof(struct thread_inputs));
+		reader->id = i; // give id number as parameter
+		pthread_create(&readers[i], NULL, _read_test_thread, reader); // create the thread
 	}
 
 	// wait for all the threads
