@@ -23,6 +23,7 @@ struct thread_inputs {
 	DB* thdb; //the common database for all threads to read
 	
 };
+
 void _random_key(char *key,int length) {
 	int i;
 	char salt[36]= "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -118,21 +119,22 @@ int main(int argc,char** argv)
 		db = db_open(DATAS);
 		if (argc == 4)
 			r = 1;
-		int re = THREADS; //number of readers
-		pthread_t readers[THREADS]; 
+		int wr = THREADS; //number of writers
+		pthread_t writers[THREADS]; 
 		if ( count < THREADS ){
-			re = count; //if reads are lesser than THREADS, create up to that number instead of threads
+			wr = count; //if writes are lesser than THREADS, create up to that number instead of threads
 		}
-		for(int i = 0; i < re; i++){
+		for(int i = 0; i < wr; i++){
 			struct thread_inputs *args = malloc(sizeof(struct thread_inputs)); //dynamic allocation for synchronization
 			args->thcount = count; //input values
 			args->thid = i; //input values
-			args-> thr = r; //input values
+			args->thr = r; //input values
 			args->thdb = db; //input database
-			pthread_create(&readers[i], NULL, &_read_test, args); //create the threads to do the routine
+			pthread_create(&writers[i], NULL, &_write_test, args); //create the threads to do the routine
+			free(args);
 		}
-		for(int i = 0; i < re; i++){
-			pthread_join(readers[i], NULL); //join the threads
+		for(int i = 0; i < wr; i++){
+			pthread_join(writers[i], NULL); //join the threads
 		}
 		db_close(db);
 		// finish of new code
@@ -145,6 +147,7 @@ int main(int argc,char** argv)
 		
 		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
 		pthread_join(writer, NULL); //wait for thread to join to continue
+		free(writer_args);
 	} else if (strcmp(argv[1], "read") == 0) {
 		int r = 0;
 
@@ -164,6 +167,7 @@ int main(int argc,char** argv)
 		
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(reader, NULL); //wait for thread to join to continue
+		free(reader_args);
 	} else if (strcmp(argv[1], "write-read") == 0) {
 		int r = 0;
 		int perc1; //percentage for writers
@@ -196,9 +200,8 @@ int main(int argc,char** argv)
 		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(writer, NULL); //wait for thread to join to continue
 		pthread_join(reader, NULL); //wait for thread to join to continue
-
-		
-		//_read_test(count, r);
+		free(reader_args);
+		free(writer_args);
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function
 		db_close(db);
