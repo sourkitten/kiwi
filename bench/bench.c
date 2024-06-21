@@ -161,6 +161,7 @@ int main(int argc,char** argv)
 		reader_args->random = r; //input r(random) to arguments
 		reader_args->db = db; //input database to arguments
 
+		writer_args->id = 1; // since there's only one writer, id is 1
 		writer_args->count = (long int) (count*perc1/100); //input count to arguments
 		writer_args->random = r; //input r(random) to arguments
 		writer_args->db = db; //input database to arguments

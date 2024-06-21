@@ -43,8 +43,6 @@ void* _write_test(void *_args)
 
 	db = writer->db; //unload the database 
 
-	// Lock for thread safety
-	pthread_mutex_lock(&WRlock); //lock for either write or read
 	
 	start = get_ustime_sec();
 	for (i = writer->id; i < writer->count; i += THREADS) { // change count to writer->count (from args)
@@ -60,7 +58,11 @@ void* _write_test(void *_args)
 		sv.length = VSIZE;
 		sv.mem = val;
 
+		// Lock for thread safety
+		pthread_mutex_lock(&WRlock); //lock for either write or read
 		db_add(db, &sk, &sv);
+		pthread_mutex_unlock(&WRlock);
+
 		if ((i % 10000) == 0) {
 			fprintf(stderr,"random write finished %d ops%30s\r", 
 					i, 
@@ -83,7 +85,6 @@ void* _write_test(void *_args)
 
 	
 	sleep(3);
-	pthread_mutex_unlock(&WRlock);
 	sleep(1); // Fixes segmentation fault
 	pthread_exit(NULL);
 }
