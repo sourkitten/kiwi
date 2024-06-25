@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "pthread.h": "c",
+        "string": "c",
+        "fstream": "c",
+        "istream": "c",
+        "new": "c",
+        "ostream": "c",
+        "sstream": "c",
+        "functional": "c",
+        "typeinfo": "c",
+        "*.inc": "c"
+    },
+    "terminal.integrated.env.linux": {
+        "LD_LIBRARY_PATH": "/home/evie/Documents/uni/myy601/kiwi/engine/"
+    }
+}

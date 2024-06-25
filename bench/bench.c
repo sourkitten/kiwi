@@ -77,14 +77,14 @@ void _print_environment()
 
 int main(int argc,char** argv)
 {
+	double cost;
+	long long start,end;
+
 	long int count;
 	DB* db; //added the database in bench.c to push it into the main write and read thread
 
 	srand(time(NULL));
-	if (argc < 3) {
-		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //change the description for the write-read function
-		exit(1);
-	}
+	
 	db = db_open(DATAS); //open the database
 	if (strcmp(argv[1], "write") == 0) {
 		int r = 0;
@@ -93,9 +93,6 @@ int main(int argc,char** argv)
 
 		_print_header(count);
 		_print_environment();
-		// start of new code
-		DB* db;
-		db = db_open(DATAS);
 		if (argc == 4)
 			r = 1;
 		int wr = THREADS; //number of writers
@@ -103,6 +100,7 @@ int main(int argc,char** argv)
 		if ( count < THREADS ){
 			wr = count; //if writes are lesser than THREADS, create up to that number instead of threads
 		}
+		start = get_ustime_sec();
 		for(int i = 0; i < wr; i++){
 			struct thread_inputs *args = malloc(sizeof(struct thread_inputs)); //dynamic allocation for synchronization
 			args->id = i;
@@ -114,10 +112,16 @@ int main(int argc,char** argv)
 		for(int i = 0; i < wr; i++){
 			pthread_join(writers[i], NULL); //join the threads
 		}
-		db_close(db);
-		// finish of new code
-		_print_header(count);
-		_print_environment();
+
+		end = get_ustime_sec();
+		cost = end -start;
+
+		printf(LINE);
+		printf("Write	(done:%ld): %.6f sec/op; %.1f writes/sec(estimated); cost:%.3f(sec);\n\n"
+			,count, (double)(cost / count) //count -> count_th
+			,(double)(count / cost) //count -> count_th
+			,cost);	
+
 	} else if (strcmp(argv[1], "read") == 0) {
 		int r = 0;
 
@@ -167,8 +171,8 @@ int main(int argc,char** argv)
 		writer_args->db = db; //input database to arguments
 	
 		pthread_create(&writer, NULL, &_write_test, writer_args); //create thread and pass arguments
-		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(writer, NULL); //wait for thread to join to continue
+		pthread_create(&reader, NULL, &_read_test, reader_args); //create thread and pass arguments
 		pthread_join(reader, NULL); //wait for thread to join to continue
 	} else {
 		fprintf(stderr,"Usage: db-bench <write | read | write-read> <count> [write%% read%%] <random>\n"); //changed for the write read function

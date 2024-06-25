@@ -22,6 +22,7 @@ SkipList* skiplist_new(size_t max_count)
     self->max_count = max_count;
     self->arena = arena_new();
     self->allocated = 0;
+    self->count = 0;
 
     self->hdr = arena_alloc(self->arena, SKIPNODE_SIZE + SKIPLIST_MAXLEVEL * sizeof(SkipNode*));
     self->level = 0;

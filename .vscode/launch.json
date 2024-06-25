@@ -1,0 +1,59 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {        
+            "name": "gdb write",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bench/kiwi-bench",
+            "args": ["write","1000000"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bench/",
+            "additionalSOLibSearchPath": "${workspaceFolder}/engine/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "gdb read",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bench/kiwi-bench",
+            "args": ["read","1000000"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bench/",
+            "additionalSOLibSearchPath": "${workspaceFolder}/engine/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+
+    ]
+}

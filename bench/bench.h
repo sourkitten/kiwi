@@ -15,7 +15,7 @@
 #define LINE "+-----------------------------+----------------+------------------------------+-------------------+\n"
 #define LINE1 "---------------------------------------------------------------------------------------------------\n"
 
-#define THREADS 5
+#define THREADS 24 //number of threads
 #define DATAS ("testdb") //for the database
 
 long long get_ustime_sec(void);

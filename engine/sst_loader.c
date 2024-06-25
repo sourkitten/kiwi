@@ -350,7 +350,7 @@ int sst_loader_get(SSTLoader* self, Variant* key, Variant* value, OPT* opt)
 
     uint32_t num_restarts = get_int32(stop - sizeof(uint32_t));
     stop -= sizeof(uint32_t) * (num_restarts + 1);
-//    INFO("There are %d restart points in this data block", num_restarts);
+    // INFO("There are %d restart points in this data block", num_restarts);
 
     // [start - stop] points to the actual data, not the restarts array
     uint32_t left = 0;
